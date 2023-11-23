@@ -1,8 +1,8 @@
 import src.database as _database
 
-from src.models import Order, OrderInformation
+from src.models import Order
 from src.database import engine
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 
 """
@@ -16,9 +16,12 @@ def create_database() -> None:
     """
     _database.init_db()
 
-""" 
+
+"""
 ORDER ZONE
 """
+
+
 def create_order(order: Order):
     with Session(engine) as session:
         session.add(order)

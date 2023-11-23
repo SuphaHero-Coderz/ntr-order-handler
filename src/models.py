@@ -13,8 +13,10 @@ class OrderStatus(enum.Enum):
     complete = 3
     failed = 4
 
+
 class OrderInformation(BaseModel):
     num_tokens: int
+
 
 class Order(SQLModel, table=True):
     __tablename__: str = "orders"

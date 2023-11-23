@@ -3,23 +3,22 @@ import logging as LOG
 import json
 import uuid
 import redis
-from tenacity import retry, stop_after_attempt
 from dotenv import load_dotenv
 from src.models import Order
 import src.db_services as _services
 
 load_dotenv()
 
-REDIS_QUEUE_LOCATION = os.getenv('REDIS_QUEUE', 'localhost')
-ORDER_QUEUE_NAME = os.getenv('ORDER_QUEUE_NAME')
+REDIS_QUEUE_LOCATION = os.getenv("REDIS_QUEUE", "localhost")
+ORDER_QUEUE_NAME = os.getenv("ORDER_QUEUE_NAME")
 
-QUEUE_NAME = f'queue:{ORDER_QUEUE_NAME}'
+QUEUE_NAME = f"queue:{ORDER_QUEUE_NAME}"
 INSTANCE_NAME = uuid.uuid4().hex
 
 LOG.basicConfig(
-    level=LOG.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=LOG.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
+
 
 def watch_queue(redis_conn, queue_name, callback_func, timeout=30):
     """
@@ -38,20 +37,21 @@ def watch_queue(redis_conn, queue_name, callback_func, timeout=30):
         _, packed_task = packed
 
         # If it's treated to a poison pill, quit the loop
-        if packed_task == b'DIE':
+        if packed_task == b"DIE":
             active = False
         else:
             task = None
             try:
                 task = json.loads(packed_task)
             except Exception:
-                LOG.exception('json.loads failed')
-                data = { "status" : -1, "message" : "An error occurred" }
+                LOG.exception("json.loads failed")
+                data = {"status": -1, "message": "An error occurred"}
                 redis_conn.publish(ORDER_QUEUE_NAME, json.dumps(data))
             if task:
                 callback_func(task)
-                data = { "status" : 1, "message" : "Successfully chunked video" }
+                data = {"status": 1, "message": "Successfully chunked video"}
                 redis_conn.publish(ORDER_QUEUE_NAME, json.dumps(task))
+
 
 def process_message(data):
     """
@@ -60,10 +60,11 @@ def process_message(data):
     order = Order(user_id=data["user_id"], num_tokens=data["num_tokens"])
     _services.create_order(order)
 
+
 def main():
-    LOG.info('Starting a worker...')
-    LOG.info('Unique name: %s', INSTANCE_NAME)
-    host, *port_info = REDIS_QUEUE_LOCATION.split(':')
+    LOG.info("Starting a worker...")
+    LOG.info("Unique name: %s", INSTANCE_NAME)
+    host, *port_info = REDIS_QUEUE_LOCATION.split(":")
     port = tuple()
 
     if port_info:
@@ -71,16 +72,13 @@ def main():
         port = (int(port),)
 
     named_logging = LOG.getLogger(name=INSTANCE_NAME)
-    named_logging.info('Trying to connect to %s [%s]', host, REDIS_QUEUE_LOCATION)
+    named_logging.info("Trying to connect to %s [%s]", host, REDIS_QUEUE_LOCATION)
     redis_conn = redis.Redis(host=host, *port)
-    named_logging.info('Listening to queue: %s', QUEUE_NAME)
+    named_logging.info("Listening to queue: %s", QUEUE_NAME)
 
-    watch_queue(
-        redis_conn,
-        QUEUE_NAME,
-        process_message)
+    watch_queue(redis_conn, QUEUE_NAME, process_message)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     _services.create_database()
     main()
