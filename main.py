@@ -2,10 +2,11 @@ import os
 import logging as LOG
 import json
 import uuid
-import redis
 from dotenv import load_dotenv
 from src.models import Order
+from src.redis import RedisResource, Queue
 import src.db_services as _services
+
 
 load_dotenv()
 
@@ -58,23 +59,30 @@ def process_message(data):
     Processes an incoming message from the work queue
     """
     order = Order(user_id=data["user_id"], num_tokens=data["num_tokens"])
-    _services.create_order(order)
+
+    LOG.info("Received data:", data)
+    LOG.info(data["user_id"])
+
+    LOG.info("Creating order")
+    order = _services.create_order(order)
+
+    survival_bag = {
+        "order_id": order.id,
+        **data
+    }
+
+    LOG.info("Continuing to payment queue")
+    RedisResource.push_to_queue(Queue.payment_queue, survival_bag)
 
 
 def main():
     LOG.info("Starting a worker...")
     LOG.info("Unique name: %s", INSTANCE_NAME)
-    host, *port_info = REDIS_QUEUE_LOCATION.split(":")
-    port = tuple()
-
-    if port_info:
-        port, *_ = port_info
-        port = (int(port),)
-
     named_logging = LOG.getLogger(name=INSTANCE_NAME)
-    named_logging.info("Trying to connect to %s [%s]", host, REDIS_QUEUE_LOCATION)
-    redis_conn = redis.Redis(host=host, *port)
+    named_logging.info("Trying to connect to %s", REDIS_QUEUE_LOCATION)
     named_logging.info("Listening to queue: %s", QUEUE_NAME)
+
+    redis_conn = RedisResource.get_connection()
 
     watch_queue(redis_conn, QUEUE_NAME, process_message)
 
