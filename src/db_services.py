@@ -1,8 +1,10 @@
 import src.database as _database
 
+from src.database import engine
 from sqlmodel import Session, select
 from src.models import Order, OrderCreate
 from typing import List
+from datetime import datetime
 
 """
 DATABASE ZONE
@@ -19,6 +21,24 @@ def create_database() -> None:
 """
 ORDER ZONE
 """
+
+
+async def update_expired_orders():
+    with Session(engine) as session:
+        query = select(Order)
+        results: List[Order] = session.exec(query).all()
+
+        for result in results:
+            processing_time = (datetime.utcnow() - result.last_updated).total_seconds()
+            if processing_time > 60 and result.status not in ["failed", "completed"]:
+                result.status_message = "Order processing timed out"
+                result.status = "failed"
+                session.add(result)
+
+        session.commit()
+
+        for result in results:
+            session.refresh(result)
 
 
 async def create_order(order_info: OrderCreate, session: Session) -> Order:
@@ -40,11 +60,15 @@ async def get_orders(user_id: int, session: Session) -> List[Order]:
     return results
 
 
-async def update_order_status(order_id: int, status: str, session: Session):
+async def update_order_status(
+    order_id: int, status: str, status_message: str, session: Session
+):
     query = select(Order).where(Order.id == order_id)
     result: Order = session.exec(query).one()
 
     result.status = status
+    result.status_message = status_message
+    result.last_updated = datetime.utcnow()
 
     session.add(result)
     session.commit()
