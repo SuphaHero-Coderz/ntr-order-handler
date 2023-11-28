@@ -6,6 +6,7 @@ from src.models import OrderCreate
 from dotenv import load_dotenv
 from fastapi import FastAPI, Depends
 from sqlmodel import Session
+from fastapi_utils.tasks import repeat_every
 
 app = FastAPI()
 
@@ -17,6 +18,16 @@ load_dotenv()
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
+
+@repeat_every(seconds=60)
+async def update_expired_orders() -> None:
+    await _services.update_expired_orders()
+
+
+@app.on_event("startup")
+async def startup() -> None:
+    await update_expired_orders()
 
 
 @app.post("/create-order", status_code=201)
@@ -44,8 +55,11 @@ async def get_orders(user_id: int, session: Session = Depends(get_session)):
 
 @app.put("/update-order-status")
 async def update_order_status(
-    order_id: int, status: str, session: Session = Depends(get_session)
+    order_id: int,
+    status: str,
+    status_message: str,
+    session: Session = Depends(get_session),
 ):
     await _services.update_order_status(
-        order_id=order_id, status=status, session=session
+        order_id=order_id, status=status, status_message=status_message, session=session
     )

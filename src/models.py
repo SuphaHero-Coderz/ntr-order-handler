@@ -21,5 +21,7 @@ class Order(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int
     num_tokens: int
-    status: Optional[str] = Field(default="Order created")
+    status: Optional[str] = Field(default="processing")
+    status_message: Optional[str] = Field(default="Order created")
+    last_updated: Optional[datetime] = Field(default=datetime.utcnow())
     created_at: Optional[datetime] = Field(default=datetime.utcnow())

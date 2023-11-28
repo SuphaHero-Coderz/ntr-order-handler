@@ -10,3 +10,4 @@ fastapi-jwt-auth
 python-multipart
 cryptography
 sqlmodel
+fastapi-utils
