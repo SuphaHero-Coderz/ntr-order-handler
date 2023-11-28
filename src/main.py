@@ -38,6 +38,7 @@ async def create_order(
     order = await _services.create_order(order_info, session)
 
     survival_bag = {
+        "task": "do_work",
         "order_id": order.id,
         "user_id": order.user_id,
         "num_tokens": order.num_tokens,
