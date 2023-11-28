@@ -30,6 +30,7 @@ async def create_order(
         "order_id": order.id,
         "user_id": order.user_id,
         "num_tokens": order.num_tokens,
+        "user_credits": order_info.user_credits,
     }
 
     RedisResource.push_to_queue(Queue.payment_queue, survival_bag)
@@ -39,3 +40,12 @@ async def create_order(
 async def get_orders(user_id: int, session: Session = Depends(get_session)):
     orders = await _services.get_orders(user_id, session)
     return orders
+
+
+@app.put("/update-order-status")
+async def update_order_status(
+    order_id: int, status: str, session: Session = Depends(get_session)
+):
+    await _services.update_order_status(
+        order_id=order_id, status=status, session=session
+    )

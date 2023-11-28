@@ -1,16 +1,7 @@
-import enum
-
 from sqlmodel import Field, SQLModel
 from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel
-
-
-class OrderStatus(enum.Enum):
-    created = 0
-    payment = 1
-    delivery = 2
-    complete = 3
 
 
 class UserCredentials(BaseModel):
@@ -21,6 +12,7 @@ class UserCredentials(BaseModel):
 class OrderCreate(BaseModel):
     user_id: int
     num_tokens: int
+    user_credits: int
 
 
 class Order(SQLModel, table=True):
@@ -29,5 +21,5 @@ class Order(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int
     num_tokens: int
-    status: Optional[OrderStatus] = Field(default=OrderStatus.created)
+    status: Optional[str] = Field(default="Order created")
     created_at: Optional[datetime] = Field(default=datetime.utcnow())

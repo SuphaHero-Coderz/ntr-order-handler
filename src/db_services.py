@@ -38,3 +38,13 @@ async def get_orders(user_id: int, session: Session) -> List[Order]:
     results: List[Order] = session.exec(query).all()
 
     return results
+
+
+async def update_order_status(order_id: int, status: str, session: Session):
+    query = select(Order).where(Order.id == order_id)
+    result: Order = session.exec(query).one()
+
+    result.status = status
+
+    session.add(result)
+    session.commit()
