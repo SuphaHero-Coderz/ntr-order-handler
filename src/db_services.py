@@ -1,9 +1,8 @@
 import src.database as _database
 
-from src.models import Order
-from src.database import engine
 from sqlmodel import Session, select
-
+from src.models import Order, OrderCreate
+from typing import List
 
 """
 DATABASE ZONE
@@ -22,12 +21,20 @@ ORDER ZONE
 """
 
 
-def create_order(order: Order):
-    with Session(engine) as session:
-        session.add(order)
-        session.commit()
+async def create_order(order_info: OrderCreate, session: Session) -> Order:
+    order: Order = Order(
+        user_id=order_info.user_id,
+        num_tokens=order_info.num_tokens,
+    )
 
-        query = select(Order).where(Order.id == order.id)
-        created_order = session.exec(query).first()
+    session.add(order)
+    session.commit()
 
-        return created_order
+    return order
+
+
+async def get_orders(user_id: int, session: Session) -> List[Order]:
+    query = select(Order).where(Order.user_id == user_id)
+    results: List[Order] = session.exec(query).all()
+
+    return results

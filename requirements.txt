@@ -3,8 +3,10 @@ pydantic
 uvicorn
 redis
 python-dotenv
+passlib
 sqlalchemy
 psycopg2-binary
+fastapi-jwt-auth
 python-multipart
+cryptography
 sqlmodel
-tenacity

@@ -29,6 +29,3 @@ class RedisResource:
 
     def push_to_queue(queue: Queue, data: Dict):
         RedisResource.conn.rpush(queue.value, json.dumps(data))
-
-    def get_connection() -> redis.Redis:
-        return RedisResource.conn
