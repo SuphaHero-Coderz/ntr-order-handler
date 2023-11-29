@@ -44,6 +44,7 @@ async def create_order(
 ):
     with tracer.start_as_current_span("create order"):
         order = await _services.create_order(order_info, session)
+        #add trace context into the survival bag so the receiver service can create span
         carrier = {}
         TraceContextTextMapPropagator().inject(carrier)
         print(carrier)
