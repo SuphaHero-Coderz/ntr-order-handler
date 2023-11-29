@@ -11,3 +11,5 @@ python-multipart
 cryptography
 sqlmodel
 fastapi-utils
+opentelemetry-distro==0.38b0
+opentelemetry-exporter-otlp==1.17.0

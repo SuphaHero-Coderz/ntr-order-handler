@@ -12,4 +12,5 @@ WORKDIR /app
 
 # How to run it when we start up the box?
 #CMD ["gunicorn", "-b 0.0.0.0:5000", "-w 2", "main:app"]
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "80"]
+RUN opentelemetry-bootstrap --action=install
+CMD ["opentelemetry-instrument", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "80"]
