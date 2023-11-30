@@ -59,6 +59,12 @@ async def get_orders(user_id: int, session: Session) -> List[Order]:
 
     return results
 
+async def get_all_orders(session: Session) -> List[Order]:
+    query = select(Order)
+    results: List[Order] = session.exec(query).all()
+
+    return results
+
 
 async def update_order_status(
     order_id: int, status: str, status_message: str, session: Session

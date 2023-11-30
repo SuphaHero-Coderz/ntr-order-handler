@@ -53,6 +53,11 @@ async def get_orders(user_id: int, session: Session = Depends(get_session)):
     orders = await _services.get_orders(user_id, session)
     return orders
 
+@app.get("/get-all-orders")
+async def get_orders(session: Session = Depends(get_session)):
+    orders = await _services.get_all_orders(session)
+    return orders
+
 
 @app.put("/update-order-status")
 async def update_order_status(
