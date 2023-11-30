@@ -44,7 +44,7 @@ async def create_order(
 ):
     with tracer.start_as_current_span("create order"):
         order = await _services.create_order(order_info, session)
-        #add trace context into the survival bag so the receiver service can create span
+        # add trace context into the survival bag so receiver service can create span
         carrier = {}
         TraceContextTextMapPropagator().inject(carrier)
         print(carrier)
@@ -55,7 +55,7 @@ async def create_order(
             "user_id": order.user_id,
             "num_tokens": order.num_tokens,
             "user_credits": order_info.user_credits,
-            "traceparent": carrier["traceparent"]
+            "traceparent": carrier["traceparent"],
         }
 
         RedisResource.push_to_queue(Queue.payment_queue, survival_bag)
@@ -66,8 +66,9 @@ async def get_orders(user_id: int, session: Session = Depends(get_session)):
     orders = await _services.get_orders(user_id, session)
     return orders
 
+
 @app.get("/get-all-orders")
-async def get_orders(session: Session = Depends(get_session)):
+async def get_all_orders(session: Session = Depends(get_session)):
     orders = await _services.get_all_orders(session)
     return orders
 
