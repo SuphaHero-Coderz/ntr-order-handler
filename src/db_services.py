@@ -35,14 +35,7 @@ async def update_expired_orders() -> None:
         for result in results:
             processing_time = (datetime.utcnow() - result.last_updated).total_seconds()
             if processing_time > 60 and result.status not in ["failed", "complete"]:
-                result.status_message = "Order processing timed out"
-                result.status = "failed"
-                session.add(result)
-
-        session.commit()
-
-        for result in results:
-            session.refresh(result)
+                await update_order_status(result.id, "failed", "Order processing timed out", session)
 
 
 async def create_order(order_info: OrderCreate, session: Session) -> Order:
@@ -119,5 +112,26 @@ async def update_order_status(
     result.status_message = status_message
     result.last_updated = datetime.utcnow()
 
+
     session.add(result)
+
+    await append_to_logs(order_id, status_message, session)
+
+    session.commit()
+
+async def append_to_logs(order_id: int, log: str, session: Session) -> None:
+    """
+    Appends a message to the log
+
+    Args:
+        order_id (int): _description_
+        log (str): _description_
+        session (Session): _description_
+    """
+    query = select(Order).where(Order.id == order_id)
+    result: Order = session.exec(query).one()
+
+    log = { datetime.utcnow() : log }
+    result.logs.append(log)
+
     session.commit()

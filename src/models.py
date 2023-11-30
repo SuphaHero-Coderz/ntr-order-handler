@@ -1,5 +1,5 @@
 from sqlmodel import Field, SQLModel
-from typing import Optional
+from typing import Optional, List, Dict, Tuple
 from datetime import datetime
 from pydantic import BaseModel
 
@@ -24,4 +24,5 @@ class Order(SQLModel, table=True):
     status: Optional[str] = Field(default="processing")
     status_message: Optional[str] = Field(default="Order created")
     last_updated: Optional[datetime] = Field(default=datetime.utcnow())
+    logs: Optional[List] = Field(default=[])
     created_at: Optional[datetime] = Field(default=datetime.utcnow())
