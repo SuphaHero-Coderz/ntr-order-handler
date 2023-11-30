@@ -7,6 +7,13 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Depends
 from sqlmodel import Session
 from fastapi_utils.tasks import repeat_every
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+
+provider = TracerProvider()
+trace.set_tracer_provider(provider)
+tracer = trace.get_tracer(__name__)
 
 app = FastAPI()
 
@@ -35,17 +42,23 @@ async def create_order(
     order_info: OrderCreate,
     session: Session = Depends(get_session),
 ):
-    order = await _services.create_order(order_info, session)
+    with tracer.start_as_current_span("create order"):
+        order = await _services.create_order(order_info, session)
+        #add trace context into the survival bag so the receiver service can create span
+        carrier = {}
+        TraceContextTextMapPropagator().inject(carrier)
+        print(carrier)
 
-    survival_bag = {
-        "task": "do_work",
-        "order_id": order.id,
-        "user_id": order.user_id,
-        "num_tokens": order.num_tokens,
-        "user_credits": order_info.user_credits,
-    }
+        survival_bag = {
+            "task": "do_work",
+            "order_id": order.id,
+            "user_id": order.user_id,
+            "num_tokens": order.num_tokens,
+            "user_credits": order_info.user_credits,
+            "traceparent": carrier["traceparent"]
+        }
 
-    RedisResource.push_to_queue(Queue.payment_queue, survival_bag)
+        RedisResource.push_to_queue(Queue.payment_queue, survival_bag)
 
 
 @app.get("/get-orders")
