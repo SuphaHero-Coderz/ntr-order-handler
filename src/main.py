@@ -1,6 +1,7 @@
 import src.db_services as _services
 from src.database import get_session
 from src.redis import RedisResource, Queue
+from src.exceptions import ForcedFailureError
 
 from src.models import OrderCreate
 from dotenv import load_dotenv
@@ -42,23 +43,31 @@ async def create_order(
     order_info: OrderCreate,
     session: Session = Depends(get_session),
 ):
-    with tracer.start_as_current_span("create order"):
-        order = await _services.create_order(order_info, session)
-        # add trace context into the survival bag so receiver service can create span
-        carrier = {}
-        TraceContextTextMapPropagator().inject(carrier)
-        print(carrier)
+    try:
+        with tracer.start_as_current_span("create order"):
+            order = await _services.create_order(order_info, session)
+            # add trace context into the survival bag so receiver service can create span
+            carrier = {}
+            TraceContextTextMapPropagator().inject(carrier)
 
-        survival_bag = {
-            "task": "do_work",
-            "order_id": order.id,
-            "user_id": order.user_id,
-            "num_tokens": order.num_tokens,
-            "user_credits": order_info.user_credits,
-            "traceparent": carrier["traceparent"],
-        }
+            if order_info.order_fail:
+                raise ForcedFailureError
 
-        RedisResource.push_to_queue(Queue.payment_queue, survival_bag)
+            survival_bag = {
+                **order_info.__dict__,
+                "task": "do_work",
+                "order_id": order.id,
+                "traceparent": carrier["traceparent"],
+            }
+
+            RedisResource.push_to_queue(Queue.payment_queue, survival_bag)
+    except Exception as e:
+        await update_order_status(
+            order_id=order.id,
+            status="failed",
+            status_message=e.message,
+            session=session,
+        )
 
 
 @app.get("/get-orders")

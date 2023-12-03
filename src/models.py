@@ -2,6 +2,7 @@ from sqlmodel import Field, SQLModel
 from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel
+from pydantic import Field as PyField
 
 
 class UserCredentials(BaseModel):
@@ -13,6 +14,10 @@ class OrderCreate(BaseModel):
     user_id: int
     num_tokens: int
     user_credits: int
+    order_fail: bool = PyField(default=False)
+    payment_fail: bool = PyField(default=False)
+    inventory_fail: bool = PyField(default=False)
+    delivery_fail: bool = PyField(default=False)
 
 
 class Order(SQLModel, table=True):
