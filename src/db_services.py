@@ -35,7 +35,9 @@ async def update_expired_orders() -> None:
         for result in results:
             processing_time = (datetime.utcnow() - result.last_updated).total_seconds()
             if processing_time > 60 and result.status not in ["failed", "complete"]:
-                await update_order_status(result.id, "failed", "Order processing timed out", session)
+                await update_order_status(
+                    result.id, "failed", "Order processing timed out", session
+                )
 
 
 async def create_order(order_info: OrderCreate, session: Session) -> Order:
