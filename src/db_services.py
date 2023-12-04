@@ -62,6 +62,23 @@ async def create_order(order_info: OrderCreate, session: Session) -> Order:
     return order
 
 
+async def get_order(order_id: int, session: Session) -> Order:
+    """
+    Gets orders with `order_id`
+
+    Args:
+        order_id (int): the id of the order
+        session (Session): database session
+
+    Returns:
+        Order: the order
+    """
+    query = select(Order).where(Order.id == order_id)
+    result = session.exec(query).one()
+
+    return result
+
+
 async def get_orders(user_id: int, session: Session) -> List[Order]:
     """
     Gets orders for user with `user_id`
